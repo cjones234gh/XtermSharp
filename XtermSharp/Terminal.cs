@@ -680,9 +680,34 @@ namespace XtermSharp {
 
 		}
 
+		/// <summary>
+		/// Maps a 24-bit RGB color to the closest entry in the 256-color palette.
+		/// XtermSharp packs colors into a 9-bit field, so true color (SGR 38/48;2;r;g;b)
+		/// is approximated to the nearest palette index rather than stored verbatim.
+		/// </summary>
 		public int MatchColor (int r1, int g1, int b1)
 		{
-			throw new NotImplementedException ();
+			var colors = Color.DefaultAnsiColors;
+			int best = -1;
+			int bestDistance = int.MaxValue;
+
+			// Search the 6x6x6 cube and grayscale ramp (16..255); the first 16 system
+			// colors are skipped so palette/theme tweaks don't skew the nearest match.
+			for (int i = 16; i < colors.Count; i++) {
+				var c = colors [i];
+				int dr = c.Red - r1;
+				int dg = c.Green - g1;
+				int db = c.Blue - b1;
+				int distance = dr * dr + dg * dg + db * db;
+				if (distance < bestDistance) {
+					bestDistance = distance;
+					best = i;
+					if (distance == 0)
+						break;
+				}
+			}
+
+			return best;
 		}
 
 		internal void EmitData (string txt)
