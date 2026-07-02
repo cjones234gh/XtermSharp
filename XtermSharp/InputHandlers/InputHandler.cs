@@ -797,7 +797,7 @@ namespace XtermSharp {
 
 			if (pars.Length > 1) {
 				for (var i = 0; i < pars.Length; i++)
-					terminal.csiDECRESET (pars [i], "");
+					terminal.csiDECRESET (pars [i], collect);
 
 
 				return;
@@ -812,7 +812,7 @@ namespace XtermSharp {
 
 			if (pars.Length > 1) {
 				for (var i = 0; i < pars.Length; i++)
-					terminal.csiDECSET (pars [i], "");
+					terminal.csiDECSET (pars [i], collect);
 
 
 				return;
@@ -910,10 +910,11 @@ namespace XtermSharp {
 			var buffer = terminal.Buffer;
 			var line = buffer.Lines [buffer.YBase + buffer.Y];
 			CharData cd = buffer.X - 1 < 0 ? new CharData (CharData.DefaultAttr) : line [buffer.X - 1];
-			line.ReplaceCells (buffer.X,
-				  buffer.X + p,
-				      cd);
-			// FIXME: no UpdateRange here?
+			var end = Math.Min (buffer.X + p, terminal.Cols);
+			line.ReplaceCells (buffer.X, end, cd);
+			// REP advances the cursor past the repeated characters
+			buffer.X = end;
+			terminal.UpdateRange (buffer.Y);
 		}
 
 		//
@@ -1134,7 +1135,6 @@ namespace XtermSharp {
 			int param = Math.Max (pars.Length > 0 ? pars [0] : 1, 1);
 			var buffer = terminal.Buffer;
 
-			buffer.Y -= param;
 			var newY = buffer.Y - param;
 			if (newY < 0)
 				buffer.Y = 0;
@@ -1304,7 +1304,8 @@ namespace XtermSharp {
 						} else {
 							// The line already exists (eg. the initial viewport), mark it as a
 							// wrapped line
-							buffer.Lines [++buffer.Y].IsWrapped = true;
+							buffer.Y++;
+							buffer.Lines [buffer.Y + buffer.YBase].IsWrapped = true;
 						}
 
 						// row changed, get it again

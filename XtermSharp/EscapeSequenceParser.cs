@@ -622,15 +622,17 @@ namespace XtermSharp {
 					osc = "";
 					break;
 				case ParserAction.OscPut:
-					for (var j = i; ; j++) {
-						if (j > len || (data [j] < 0x20) || (data [j] > 0x7f && data [j] < 0x9f)) {
-							var block = new byte [j - (i+1)];
-							for (int k = i+1; k < j; k++)
-								block [k-i-1] = data [k];
+					// Collect the run of printable OSC payload bytes starting at i
+					// (data[i] itself triggered OscPut, so it is part of the payload).
+					for (var j = i + 1; ; j++) {
+						if (j >= len || (data [j] < 0x20) || (data [j] > 0x7f && data [j] < 0x9f)) {
+							var block = new byte [j - i];
+							for (int k = i; k < j; k++)
+								block [k - i] = data [k];
 							// TODO: Audit, the code below as I would not like the code below to abort on invalid UTF8
 							// So we need a way of producing memory blocks.
 							osc += System.Text.Encoding.UTF8.GetString (block);
-								 
+
 							i = j - 1;
 							break;
 						}

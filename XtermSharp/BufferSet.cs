@@ -67,10 +67,14 @@ namespace XtermSharp {
 		{
 			if (Active == Alt)
 				return;
+
+			// The alt buffer must always start out blank. Relying on it having been
+			// cleared when the normal buffer was activated is not enough: modes 47
+			// and 1049 deactivate it without clearing, which left stale rows from the
+			// previous full screen app visible under the next one.
+			Alt.Clear ();
 			Alt.X = Normal.X;
 			Alt.Y = Normal.Y;
-			// Since the alt buffer is always cleared when the normal buffer is
-			// activated, we want to fill it when switching to it.
 
 			Alt.FillViewportRows (fillAttr);
 			Active = Alt;
